@@ -12,8 +12,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/jchv/go-webview2/internal/w32"
-	"github.com/jchv/go-webview2/pkg/edge"
+	"github.com/yrpark99/go-webview2/internal/w32"
+	"github.com/yrpark99/go-webview2/pkg/edge"
 
 	"golang.org/x/sys/windows"
 )
@@ -106,7 +106,13 @@ func NewWithOptions(options WebViewOptions) WebView {
 
 	w.browser = chromium
 	w.mainthread, _, _ = w32.Kernel32GetCurrentThreadID.Call()
-	if !w.CreateWithOptions(options.WindowOptions) {
+	if options.Window != nil {
+		w.hwnd = uintptr(options.Window)
+		if !w.browser.Embed(w.hwnd) {
+			return nil
+		}
+		w.browser.Resize()
+	} else if !w.CreateWithOptions(options.WindowOptions) {
 		return nil
 	}
 
@@ -479,4 +485,8 @@ func (w *webview) Bind(name string, f interface{}) error {
 	})()`)
 
 	return nil
+}
+
+func (w *webview) NotifyWinowPosChanged() {
+	w.browser.NotifyParentWindowPositionChanged()
 }
